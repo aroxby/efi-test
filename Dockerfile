@@ -1,15 +1,12 @@
 FROM ubuntu:bionic
 
-# Install massive packages in a separate layer
 RUN apt-get update && apt-get install -y \
     build-essential \
-    qemu-system-x86
-
-RUN apt-get update && apt-get install -y \
     dosfstools \
     gnu-efi \
     mtools \
-    ovmf
+    ovmf \
+    qemu-system-x86
 
 ENV ARCH=x86_64
 ADD . /src
