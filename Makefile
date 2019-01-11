@@ -16,14 +16,15 @@ OBJS=$(subst .c,.o,$(SRCS))
 TARGET_NAME=efi-test
 SO_TARGET=$(TARGET_NAME).so
 TARGET=$(TARGET_NAME).efi
+DISK=$(TARGET_NAME).fat
 
 OBJCOPY=objcopy
 
-.PHONY: default all tidy clean
+.PHONY: default all disk tidy clean
 
 default: all
 
-all: $(TARGET)
+all: disk
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
@@ -34,8 +35,16 @@ $(SO_TARGET): $(OBJS)
 $(TARGET): $(SO_TARGET)
 	$(OBJCOPY) $(OBJCOPYFLAGS) $< $@
 
+$(DISK): $(TARGET)
+	mkfs.fat -CF 32 $@ 65536
+	mmd -i $@ ::efi && \
+	mmd -i $@ ::efi/boot && \
+	mcopy -i $@ $< ::efi/boot/bootx64.efi
+
+disk: $(DISK)
+
 tidy:
 	rm -f $(OBJS) $(SO_TARGET)
 
 clean: tidy
-	rm -rf $(TARGET)
+	rm -rf $(TARGET) $(DISK)
