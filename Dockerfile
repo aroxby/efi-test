@@ -14,12 +14,12 @@ RUN apt-get update && apt-get install -y \
 ENV ARCH=x86_64
 ADD . /src
 WORKDIR /src
-RUN ./compile.sh
+RUN make
 
 RUN mkfs.fat -CF 32 efi.img 65536
 RUN mmd -i efi.img ::efi && \
     mmd -i efi.img ::efi/boot && \
-    mcopy -i efi.img main.efi ::efi/boot/bootx64.efi
+    mcopy -i efi.img efi-test.efi ::efi/boot/bootx64.efi
 
 CMD qemu-system-x86_64 \
     -L /usr/share/qemu/ -bios OVMF.fd \
