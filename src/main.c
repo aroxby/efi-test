@@ -2,8 +2,8 @@
 #include <efilib.h>
 #include <sys/io.h>
 
-void qemu_exit(unsigned int status) {
-    outl(status, 0xf4);
+void qemu_exit(UINT8 status) {
+    outb(status, 0xf4);
 }
 
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {

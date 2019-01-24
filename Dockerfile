@@ -17,4 +17,4 @@ CMD qemu-system-x86_64 \
     -L /usr/share/qemu/ -bios OVMF.fd \
     -drive file=efi-test.fat \
     -nographic \
-    -device isa-debug-exit,iobase=0xf4,iosize=0x04
+    -device isa-debug-exit,iobase=0xf4,iosize=0x01 || exit $(($?>>1))
