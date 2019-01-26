@@ -30,7 +30,7 @@ all: disk
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(SO_TARGET): $(OBJS)
-	$(LD) $< $(LDFLAGS) -o $@
+	$(LD) $^ $(LDFLAGS) -o $@
 
 $(TARGET): $(SO_TARGET)
 	$(OBJCOPY) $(OBJCOPYFLAGS) $< $@
