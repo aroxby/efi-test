@@ -26,14 +26,6 @@ BOOLEAN should_list(EFI_FILE_INFO *info) {
     return (StrCmp(name, L".") && StrCmp(name, L".."));
 }
 
-void dump_list(ListNode *lst) {
-    Print(L"(%x)>%x\n", lst?lst->prev:NULL, lst);
-    while(lst) {
-        lst = lst->next;
-        Print(L">%x\n", lst);
-    }
-}
-
 void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recursive) {
     typedef struct {
         EFI_FILE_HANDLE base;
@@ -67,7 +59,7 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
             efi_status = read_dir_entry(dir_handle, file_info, max_info_size);
             if (efi_status != EFI_SUCCESS) {
                 Print(L" - Couldn't read entry\n");
-            } else if (file_info->Size && should_list(file_info)) {
+            } else if (should_list(file_info)) {
                 Print(L"%s%s\n", dir_name, file_info->FileName);
                 if (recursive && is_dir(file_info)) {
                     // FIXME: This will need freed
@@ -78,7 +70,7 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
                     StrCat(name_buffer, L"\\");
                     loop_data.base = dir_handle;
                     loop_data.path = name_buffer;
-                    ListNode *new = insertData(dir_list, EFIListData, loop_data);
+                    insertData(dir_list, EFIListData, loop_data);
                 }
             }
         } while(efi_status == EFI_SUCCESS && file_info->Size);
