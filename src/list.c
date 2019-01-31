@@ -12,6 +12,16 @@ ListNode *insertBefore(ListNode *head, ListNode *toInsert) {
     return toInsert;
 }
 
+ListNode *insertAfter(ListNode *tail, ListNode *toInsert) {
+    if(tail->next) {
+        toInsert->next = tail->next;
+        tail->next->prev = toInsert;
+    }
+    tail->next = toInsert;
+    toInsert->prev = tail;
+    return toInsert;
+}
+
 void removeNode(ListNode *drop) {
     if(drop->prev) {
         drop->prev->next = drop->next;

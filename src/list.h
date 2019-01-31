@@ -1,6 +1,6 @@
 #define getNodeData(TYPE, NODE) (*(TYPE*)((NODE)->data))
 #define createDataNode(TYPE, DATA) (createNode((&(DATA)), sizeof(TYPE)))
-#define insertData(LIST, TYPE, DATA) (insertBefore((LIST), (createDataNode(TYPE, DATA))))
+#define insertData(LIST, TYPE, DATA) (insertAfter((LIST), (createDataNode(TYPE, DATA))))
 
 typedef struct _ListNode {
     struct _ListNode *next;
@@ -9,6 +9,7 @@ typedef struct _ListNode {
 } ListNode;
 
 ListNode *insertBefore(ListNode *head, ListNode *toInsert);
+ListNode *insertAfter(ListNode *tail, ListNode *toInsert);
 void removeNode(ListNode *drop);
 void deleteNode(ListNode *node);
 ListNode *createNode(void *data, UINTN size);
