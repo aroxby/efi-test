@@ -2,11 +2,6 @@
 #include <efilib.h>
 #include "list.h"
 
-ListNode *createList() {
-    ListNode *tail = (ListNode *)AllocateZeroPool(sizeof(ListNode));
-    return tail;
-}
-
 ListNode *insertBefore(ListNode *head, ListNode *toInsert) {
     if(head->prev) {
         toInsert->prev = head->prev;
@@ -33,7 +28,7 @@ void deleteNode(ListNode *node) {
 }
 
 ListNode *createNode(void *data, UINTN size) {
-    ListNode *newNode = createList();
+    ListNode *newNode = AllocateZeroPool(sizeof(ListNode));
     newNode->data = AllocateZeroPool(size);
     CopyMem(newNode->data, data, size);
     return newNode;

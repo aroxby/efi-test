@@ -8,7 +8,6 @@ typedef struct _ListNode {
     void *data;
 } ListNode;
 
-ListNode *createList();
 ListNode *insertBefore(ListNode *head, ListNode *toInsert);
 void removeNode(ListNode *drop);
 void deleteNode(ListNode *node);
