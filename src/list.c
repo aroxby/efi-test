@@ -5,8 +5,9 @@
 ListNode *insertBefore(ListNode *head, ListNode *toInsert) {
     if(head->prev) {
         toInsert->prev = head->prev;
-        head->prev->next= toInsert;
+        head->prev->next = toInsert;
     }
+    head->prev = toInsert;
     toInsert->next = head;
     return toInsert;
 }
