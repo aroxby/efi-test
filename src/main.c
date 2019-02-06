@@ -26,6 +26,15 @@ BOOLEAN should_list(EFI_FILE_INFO *info) {
     return (StrCmp(name, L".") && StrCmp(name, L".."));
 }
 
+CHAR16 *cat_alloc_triple(const CHAR16 *s1, const CHAR16 *s2, const CHAR16 *s3) {
+    UINTN total_len = StrLen(s1) + StrLen(s2) + StrLen(s3);
+    CHAR16 *name_buffer = AllocatePool(total_len + 1);
+    StrCpy(name_buffer, s1);
+    StrCat(name_buffer, s2);
+    StrCat(name_buffer, s3);
+    return name_buffer;
+}
+
 void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recursive) {
     typedef struct {
         EFI_FILE_HANDLE base;
@@ -62,15 +71,11 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
             } else if (file_info->Size && should_list(file_info)) {
                 Print(L"%s%s\n", dir_name, file_info->FileName);
                 if (recursive && is_dir(file_info)) {
-                    // FIXME: This will need freed
-                    CHAR16 *name_buffer = AllocatePool(max_file_name_size);
-                    // FIXME: Possible overflow
-                    StrCpy(name_buffer, dir_name);
-                    StrCat(name_buffer, file_info->FileName);
-                    StrCat(name_buffer, L"\\");
+                    CHAR16 *name_buffer = cat_alloc_triple(dir_name, file_info->FileName, L"\\");
                     loop_data.base = dir_handle;
                     loop_data.path = name_buffer;
                     insertData(dir_list, EFIListData, loop_data);
+                    FreePool(name_buffer);
                 }
             }
         } while(efi_status == EFI_SUCCESS && file_info->Size);
