@@ -1,7 +1,21 @@
+#ifdef __cplusplus
+    typedef unsigned long long intptr_t;
+    extern "C" {
+#endif
+
 #include <efi.h>
 #include <efilib.h>
+
+#ifdef __cplusplus
+    }
+#endif
+
 #include <sys/io.h>
 #include "list.h"
+
+#ifdef __cplusplus
+    extern "C" {
+#endif
 
 void qemu_exit(UINT8 status) {
     outb(status, 0xf4);
@@ -111,3 +125,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable
         asm("hlt");
     }
 }
+
+#ifdef __cplusplus
+    }
+#endif
