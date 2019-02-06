@@ -59,7 +59,7 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
             efi_status = read_dir_entry(dir_handle, file_info, max_info_size);
             if (efi_status != EFI_SUCCESS) {
                 Print(L" - Couldn't read entry\n");
-            } else if (should_list(file_info)) {
+            } else if (file_info->Size && should_list(file_info)) {
                 Print(L"%s%s\n", dir_name, file_info->FileName);
                 if (recursive && is_dir(file_info)) {
                     // FIXME: This will need freed
