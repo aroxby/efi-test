@@ -3,6 +3,7 @@ EFI_ARCH_INC=$(EFI_INC)/$(ARCH)
 INCLUDE=$(EFI_INC) $(EFI_ARCH_INC)
 EFI_CRT=/usr/lib/crt0-efi-$(ARCH).o
 CFLAGS=-fno-stack-protector -fpic -fshort-wchar -mno-red-zone -DEFI_FUNCTION_WRAPPER
+CFLAGS:=$(CFLAGS) -fpermissive -w
 CFLAGS:=$(CFLAGS) $(foreach d, $(INCLUDE), -I$d) -Werror=implicit-function-declaration
 LDLIBS=-lgnuefi -lefi
 LDSCRIPT=-T /usr/lib/elf_$(ARCH)_efi.lds
@@ -11,8 +12,8 @@ OBJCOPYSECTS=.text .sdata .data .dynamic .dynsym .rel .rela .reloc
 OBJCOPYFLAGS=$(foreach s, $(OBJCOPYSECTS), -j $s) --target=efi-app-$(ARCH)
 
 SRC_DIR=src
-SRCS=$(shell find $(SRC_DIR) -name '*.c')
-OBJS=$(subst .c,.o,$(SRCS))
+SRCS=$(shell find $(SRC_DIR) -name '*.cpp')
+OBJS=$(subst .cpp,.o,$(SRCS))
 TARGET_NAME=efi-test
 SO_TARGET=$(TARGET_NAME).so
 TARGET=$(TARGET_NAME).efi
@@ -26,7 +27,7 @@ default: all
 
 all: disk
 
-%.o: %.c
+%.o: %.cpp
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(SO_TARGET): $(OBJS)
