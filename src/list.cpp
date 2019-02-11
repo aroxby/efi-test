@@ -48,7 +48,7 @@ void deleteNode(ListNode *node) {
 }
 
 ListNode *createNode(void *data, UINTN size) {
-    ListNode *newNode = AllocateZeroPool(sizeof(ListNode));
+    ListNode *newNode = (ListNode *)AllocateZeroPool(sizeof(ListNode));
     newNode->data = AllocateZeroPool(size);
     CopyMem(newNode->data, data, size);
     return newNode;

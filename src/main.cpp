@@ -1,4 +1,6 @@
 #ifdef __cplusplus
+    #define cpp_uefi_call_wrapper(func, ...) uefi_call_wrapper((void*)func, __VA_ARGS__)
+    #define L(s) ((CHAR16*)(L##s))
     typedef unsigned long long intptr_t;
     extern "C" {
 #endif
@@ -23,7 +25,7 @@ void qemu_exit(UINT8 status) {
 
 EFI_STATUS read_dir_entry(EFI_FILE_HANDLE dir_handle, EFI_FILE_INFO *out, UINTN max_size) {
     UINTN read_size = max_size;
-    EFI_STATUS efi_status = uefi_call_wrapper(dir_handle->Read, 3, dir_handle, &read_size, out);
+    EFI_STATUS efi_status = cpp_uefi_call_wrapper(dir_handle->Read, 3, dir_handle, &read_size, out);
     if (!read_size) {
         out->Size = 0;
     }
@@ -37,12 +39,12 @@ BOOLEAN is_dir(EFI_FILE_INFO *info) {
 
 BOOLEAN should_list(EFI_FILE_INFO *info) {
     const CHAR16 *name = info->FileName;
-    return (StrCmp(name, L".") && StrCmp(name, L".."));
+    return (StrCmp(name, L(".")) && StrCmp(name, L("..")));
 }
 
 CHAR16 *cat_alloc_triple(const CHAR16 *s1, const CHAR16 *s2, const CHAR16 *s3) {
     UINTN total_len = StrLen(s1) + StrLen(s2) + StrLen(s3);
-    CHAR16 *name_buffer = AllocatePool(total_len + 1);
+    CHAR16 *name_buffer = (CHAR16*)AllocatePool(total_len + 1);
     StrCpy(name_buffer, s1);
     StrCat(name_buffer, s2);
     StrCat(name_buffer, s3);
@@ -58,7 +60,7 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
     UINTN max_file_name_size = 256;
     EFI_STATUS efi_status;
     UINTN max_info_size = SIZE_OF_EFI_FILE_INFO + max_file_name_size;
-    EFI_FILE_INFO *file_info = AllocatePool(max_info_size);
+    EFI_FILE_INFO *file_info = (EFI_FILE_INFO *)AllocatePool(max_info_size);
 
     EFIListData loop_data = {base_handle, dir_name};
     ListNode *dir_list = createDataNode(EFIListData, loop_data);
@@ -69,10 +71,10 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
         base_handle = loop_data.base;
         dir_name = loop_data.path;
         EFI_FILE_HANDLE dir_handle;
-        efi_status = uefi_call_wrapper(
+        efi_status = cpp_uefi_call_wrapper(
             loop_data.base->Open, 5, base_handle, &dir_handle, dir_name, EFI_FILE_MODE_READ, 0);
         if (efi_status != EFI_SUCCESS) {
-            Print(L"Could not open %s, %d\n", loop_data.path, efi_status);
+            Print(L("Could not open %s, %d\n"), loop_data.path, efi_status);
             // FIXME: Flow is a little confusing
             dir_list = dir_list->next;
             continue;
@@ -81,11 +83,11 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
             ZeroMem(file_info, max_info_size);
             efi_status = read_dir_entry(dir_handle, file_info, max_info_size);
             if (efi_status != EFI_SUCCESS) {
-                Print(L" - Couldn't read entry\n");
+                Print(L(" - Couldn't read entry\n"));
             } else if (file_info->Size && should_list(file_info)) {
-                Print(L"%s%s\n", dir_name, file_info->FileName);
+                Print(L("%s%s\n"), dir_name, file_info->FileName);
                 if (recursive && is_dir(file_info)) {
-                    CHAR16 *name_buffer = cat_alloc_triple(dir_name, file_info->FileName, L"\\");
+                    CHAR16 *name_buffer = cat_alloc_triple(dir_name, file_info->FileName, L("\\"));
                     loop_data.base = dir_handle;
                     loop_data.path = name_buffer;
                     insertData(dir_list, EFIListData, loop_data);
@@ -108,19 +110,19 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable
     InitializeLib(imageHandle, systemTable);
 
     handle_protocol = systemTable->BootServices->HandleProtocol;
-    efi_status = uefi_call_wrapper(handle_protocol, 3, imageHandle, &loaded_image_protocol, &li);
+    efi_status = cpp_uefi_call_wrapper(handle_protocol, 3, imageHandle, &loaded_image_protocol, &li);
 
     if (efi_status != EFI_SUCCESS ) {
         return EFI_UNSUPPORTED;
     }
 
-    Print(L"Device: %s\n", DevicePathToStr(DevicePathFromHandle(li->DeviceHandle)));
+    Print(L("Device: %s\n"), DevicePathToStr(DevicePathFromHandle(li->DeviceHandle)));
 
     EFI_FILE_HANDLE dir_handle = LibOpenRoot(li->DeviceHandle);
-    list_dir(dir_handle, L"\\", TRUE);
+    list_dir(dir_handle, L("\\"), TRUE);
 
     qemu_exit(0);
-    Print(L"System halted.  Please manually turn off the system.\n");
+    Print(L("System halted.  Please manually turn off the system.\n"));
     for(;;) {
         asm("hlt");
     }
