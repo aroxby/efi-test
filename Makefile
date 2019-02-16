@@ -3,7 +3,7 @@ EFI_ARCH_INC=$(EFI_INC)/$(ARCH)
 INCLUDE=$(EFI_INC) $(EFI_ARCH_INC)
 EFI_CRT=/usr/lib/crt0-efi-$(ARCH).o
 CFLAGS=-fno-stack-protector -fpic -fshort-wchar -mno-red-zone -DEFI_FUNCTION_WRAPPER
-CFLAGS:=$(CFLAGS) $(foreach d, $(INCLUDE), -I$d) -Werror=implicit-function-declaration
+CFLAGS:=$(CFLAGS) $(foreach d, $(INCLUDE), -I$d) -Werror=implicit-function-declaration -fno-exceptions -fno-rtti
 LDLIBS=-lgnuefi -lefi
 LDSCRIPT=-T /usr/lib/elf_$(ARCH)_efi.lds
 LDFLAGS=-nostdlib -znocombreloc -shared -Bsymbolic -L/usr/lib -L/usr/local/lib $(EFI_CRT) $(LDLIBS) $(LDSCRIPT) --no-undefined
