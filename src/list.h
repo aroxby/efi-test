@@ -1,15 +1,65 @@
-#define getNodeData(TYPE, NODE) (*(TYPE*)((NODE)->data))
-#define createDataNode(TYPE, DATA) (createNode((&(DATA)), sizeof(TYPE)))
-#define insertData(LIST, TYPE, DATA) (insertAfter((LIST), (createDataNode(TYPE, DATA))))
+template <typename T>
+class List {
+private:
+    class Node {
+    public:
+        T *data;
+        Node *next;
+        Node *prev;
 
-typedef struct _ListNode {
-    struct _ListNode *next;
-    struct _ListNode *prev;
-    void *data;
-} ListNode;
+        Node(const T &elem, Node *next, Node *prev) {
+            this->data = new T(elem);
+            this->next = next;
+            this->prev = prev;
+        }
 
-ListNode *insertBefore(ListNode *head, ListNode *toInsert);
-ListNode *insertAfter(ListNode *tail, ListNode *toInsert);
-void removeNode(ListNode *drop);
-void deleteNode(ListNode *node);
-ListNode *createNode(void *data, UINTN size);
+        ~Node() {
+            if(data) {
+                delete data;
+            }
+        }
+    };
+
+public:
+    List() {
+        tail = head = nullptr;
+    }
+
+    ~List() {
+        while(head) {
+            Node *next = head->next;
+            delete head;
+            head = next;
+        }
+    }
+
+    void append(const T &elem) {
+        Node *new_node = new Node(elem, nullptr, tail);
+        if(tail) {
+            tail->next = new_node;
+        }
+        tail = new_node;
+        if(!head) {
+            head = tail;
+        }
+    }
+
+    void prepend(const T &elem) {
+        Node *new_node = new Node(elem, head, nullptr);
+        if(head) {
+            head->prev = new_node;
+        }
+        head = new_node;
+        if(!tail) {
+            tail = head;
+        }
+    }
+
+    // FIXME: Should be a class that supports *,++,--
+    const Node *iterator() {
+        return head;
+    }
+
+private:
+    Node *tail, *head;
+};

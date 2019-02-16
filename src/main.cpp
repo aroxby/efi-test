@@ -19,6 +19,14 @@
     extern "C" {
 #endif
 
+void *operator new(unsigned long size) {
+    return AllocatePool(size);
+}
+
+void operator delete(void *ptr, unsigned long size) {
+    FreePool(ptr);
+}
+
 void qemu_exit(UINT8 status) {
     outb(status, 0xf4);
 }
@@ -63,11 +71,12 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
     EFI_FILE_INFO *file_info = (EFI_FILE_INFO *)AllocatePool(max_info_size);
 
     EFIListData loop_data = {base_handle, dir_name};
-    ListNode *dir_list = createDataNode(EFIListData, loop_data);
+    List<EFIListData> dir_list;
+    dir_list.append(loop_data);
+    auto list_pos = dir_list.iterator();
 
     do {
-        // TODO: getNodeData should output via formal parameter
-        loop_data = getNodeData(EFIListData, dir_list);
+        loop_data = *list_pos->data;
         base_handle = loop_data.base;
         dir_name = loop_data.path;
         EFI_FILE_HANDLE dir_handle;
@@ -76,7 +85,7 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
         if (efi_status != EFI_SUCCESS) {
             Print(L("Could not open %s, %d\n"), loop_data.path, efi_status);
             // FIXME: Flow is a little confusing
-            dir_list = dir_list->next;
+            list_pos = list_pos->next;
             continue;
         }
         do {
@@ -90,15 +99,15 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
                     CHAR16 *name_buffer = cat_alloc_triple(dir_name, file_info->FileName, L("\\"));
                     loop_data.base = dir_handle;
                     loop_data.path = name_buffer;
-                    insertData(dir_list, EFIListData, loop_data);
-                    FreePool(name_buffer);
+                    dir_list.append(loop_data);
+                    // FIXME: name_buffer isn't copied and needs to remain resident
+                    // FreePool(name_buffer);
                 }
             }
         } while(efi_status == EFI_SUCCESS && file_info->Size);
-    dir_list = dir_list->next;
-    } while(dir_list);
+    list_pos = list_pos->next;
+    } while(list_pos);
     FreePool(file_info);
-    // TODO: The list still needs freed
 }
 
 EFI_STATUS EFIAPI efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
