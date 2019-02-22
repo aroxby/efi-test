@@ -1,31 +1,6 @@
-#ifdef __cplusplus
-    #define cpp_uefi_call_wrapper(func, ...) uefi_call_wrapper((void*)func, __VA_ARGS__)
-    #define L(s) ((CHAR16*)(L##s))
-    typedef unsigned long long intptr_t;
-    extern "C" {
-#endif
-
-#include <efi.h>
-#include <efilib.h>
-
-#ifdef __cplusplus
-    }
-#endif
-
 #include <sys/io.h>
+#include "efi-cpp.h"
 #include "list.h"
-
-#ifdef __cplusplus
-    extern "C" {
-#endif
-
-void *operator new(unsigned long size) {
-    return AllocatePool(size);
-}
-
-void operator delete(void *ptr, unsigned long size) {
-    FreePool(ptr);
-}
 
 void qemu_exit(UINT8 status) {
     outb(status, 0xf4);
@@ -33,7 +8,7 @@ void qemu_exit(UINT8 status) {
 
 EFI_STATUS read_dir_entry(EFI_FILE_HANDLE dir_handle, EFI_FILE_INFO *out, UINTN max_size) {
     UINTN read_size = max_size;
-    EFI_STATUS efi_status = cpp_uefi_call_wrapper(dir_handle->Read, 3, dir_handle, &read_size, out);
+    EFI_STATUS efi_status = uefi_call(dir_handle->Read, 3, dir_handle, &read_size, out);
     if (!read_size) {
         out->Size = 0;
     }
@@ -80,7 +55,7 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
         base_handle = loop_data.base;
         dir_name = loop_data.path;
         EFI_FILE_HANDLE dir_handle;
-        efi_status = cpp_uefi_call_wrapper(
+        efi_status = uefi_call(
             loop_data.base->Open, 5, base_handle, &dir_handle, dir_name, EFI_FILE_MODE_READ, 0);
         if (efi_status != EFI_SUCCESS) {
             Print(L("Could not open %s, %d\n"), loop_data.path, efi_status);
@@ -110,7 +85,7 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
     FreePool(file_info);
 }
 
-EFI_STATUS EFIAPI efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
+extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
     EFI_GUID loaded_image_protocol = LOADED_IMAGE_PROTOCOL;
     EFI_HANDLE_PROTOCOL handle_protocol;
     EFI_STATUS efi_status;
@@ -119,7 +94,7 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable
     InitializeLib(imageHandle, systemTable);
 
     handle_protocol = systemTable->BootServices->HandleProtocol;
-    efi_status = cpp_uefi_call_wrapper(handle_protocol, 3, imageHandle, &loaded_image_protocol, &li);
+    efi_status = uefi_call(handle_protocol, 3, imageHandle, &loaded_image_protocol, &li);
 
     if (efi_status != EFI_SUCCESS ) {
         return EFI_UNSUPPORTED;
@@ -136,7 +111,3 @@ EFI_STATUS EFIAPI efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable
         asm("hlt");
     }
 }
-
-#ifdef __cplusplus
-    }
-#endif
