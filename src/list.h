@@ -1,3 +1,6 @@
+#ifndef _INC_LIST_H
+#define _INC_LIST_H
+
 template <typename T>
 class List {
 private:
@@ -63,3 +66,5 @@ public:
 private:
     Node *tail, *head;
 };
+
+#endif//_INC_LIST_H
