@@ -1,6 +1,7 @@
 #include <sys/io.h>
 #include "efi-cpp.h"
 #include "list.h"
+#include "basic-string.h"
 
 void qemu_exit(UINT8 status) {
     outb(status, 0xf4);
@@ -35,53 +36,55 @@ CHAR16 *cat_alloc_triple(const CHAR16 *s1, const CHAR16 *s2, const CHAR16 *s3) {
 }
 
 void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recursive) {
-    typedef struct {
+    class EFIListData {
+    public:
         EFI_FILE_HANDLE base;
-        const CHAR16 *path;
-    } EFIListData;
+        String path;
+        EFIListData(EFI_FILE_HANDLE base, const CHAR16 *path) : base(base), path(path) { }
+        EFIListData(const EFIListData &other) : base(other.base), path(other.path) { }
+    };
 
     UINTN max_file_name_size = 256;
     EFI_STATUS efi_status;
     UINTN max_info_size = SIZE_OF_EFI_FILE_INFO + max_file_name_size;
     EFI_FILE_INFO *file_info = (EFI_FILE_INFO *)AllocatePool(max_info_size);
 
-    EFIListData loop_data = {base_handle, dir_name};
+    EFIListData *loop_data = new EFIListData(base_handle, dir_name);
     List<EFIListData> dir_list;
-    dir_list.append(loop_data);
+    dir_list.append(*loop_data);
     auto list_pos = dir_list.iterator();
 
     do {
-        loop_data = *list_pos->data;
-        base_handle = loop_data.base;
-        dir_name = loop_data.path;
+        delete loop_data;
+        loop_data = new EFIListData(list_pos->data->base, list_pos->data->path);
+        base_handle = loop_data->base;
+        dir_name = loop_data->path;
         EFI_FILE_HANDLE dir_handle;
         efi_status = uefi_call(
-            loop_data.base->Open, 5, base_handle, &dir_handle, dir_name, EFI_FILE_MODE_READ, 0);
+            base_handle->Open, 5, base_handle, &dir_handle, dir_name, EFI_FILE_MODE_READ, 0);
         if (efi_status != EFI_SUCCESS) {
-            Print(L("Could not open %s, %d\n"), loop_data.path, efi_status);
-            // FIXME: Flow is a little confusing
+            Print(L("Could not open %s, %d\n"), dir_name, efi_status);
             list_pos = list_pos->next;
-            continue;
-        }
-        do {
-            ZeroMem(file_info, max_info_size);
-            efi_status = read_dir_entry(dir_handle, file_info, max_info_size);
-            if (efi_status != EFI_SUCCESS) {
-                Print(L(" - Couldn't read entry\n"));
-            } else if (file_info->Size && should_list(file_info)) {
-                Print(L("%s%s\n"), dir_name, file_info->FileName);
-                if (recursive && is_dir(file_info)) {
-                    CHAR16 *name_buffer = cat_alloc_triple(dir_name, file_info->FileName, L("\\"));
-                    loop_data.base = dir_handle;
-                    loop_data.path = name_buffer;
-                    dir_list.append(loop_data);
-                    // FIXME: name_buffer isn't copied and needs to remain resident
-                    // FreePool(name_buffer);
+        } else {
+            do {
+                ZeroMem(file_info, max_info_size);
+                efi_status = read_dir_entry(dir_handle, file_info, max_info_size);
+                if (efi_status != EFI_SUCCESS) {
+                    Print(L(" - Couldn't read entry\n"));
+                } else if (file_info->Size && should_list(file_info)) {
+                    Print(L("%s%s\n"), dir_name, file_info->FileName);
+                    if (recursive && is_dir(file_info)) {
+                        CHAR16 *name_buffer = cat_alloc_triple(dir_name, file_info->FileName, L("\\"));
+                        EFIListData next_data(dir_handle, name_buffer);
+                        dir_list.append(next_data);
+                        FreePool(name_buffer);
+                    }
                 }
-            }
-        } while(efi_status == EFI_SUCCESS && file_info->Size);
+            } while(efi_status == EFI_SUCCESS && file_info->Size);
+        }
     list_pos = list_pos->next;
     } while(list_pos);
+    delete loop_data;
     FreePool(file_info);
 }
 
