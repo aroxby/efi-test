@@ -28,7 +28,7 @@ BOOLEAN should_list(EFI_FILE_INFO *info) {
 
 CHAR16 *cat_alloc_triple(const CHAR16 *s1, const CHAR16 *s2, const CHAR16 *s3) {
     UINTN total_len = StrLen(s1) + StrLen(s2) + StrLen(s3);
-    CHAR16 *name_buffer = (CHAR16*)AllocatePool(total_len + 1);
+    CHAR16 *name_buffer = new CHAR16[total_len + 1];
     StrCpy(name_buffer, s1);
     StrCat(name_buffer, s2);
     StrCat(name_buffer, s3);
@@ -73,7 +73,7 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
                     if (recursive && is_dir(file_info)) {
                         CHAR16 *name_buffer = cat_alloc_triple(dir_name, file_info->FileName, L("\\"));
                         dir_list.append({dir_handle, name_buffer});
-                        FreePool(name_buffer);
+                        delete[] name_buffer;
                     }
                 }
             } while(efi_status == EFI_SUCCESS && file_info->Size);
