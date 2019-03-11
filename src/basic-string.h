@@ -13,8 +13,6 @@ public:
     String(const String &other);
     ~String();
 
-    size_t length() const { return StrLen(data); }
-
     operator const schar *() const { return data; }
 
 private:

@@ -2,7 +2,7 @@
 #include "basic-string.h"
 
 void String::construct(const schar *buffer) {
-    size_t length = StrLen(buffer);
+    auto length = StrLen(buffer);
     data = new schar[length];
     StrCpy(data, buffer);
 }

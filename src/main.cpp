@@ -36,27 +36,24 @@ CHAR16 *cat_alloc_triple(const CHAR16 *s1, const CHAR16 *s2, const CHAR16 *s3) {
 }
 
 void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recursive) {
-    class EFIListData {
-    public:
+    struct EFIListData {
         EFI_FILE_HANDLE base;
         String path;
-        EFIListData(EFI_FILE_HANDLE base, const CHAR16 *path) : base(base), path(path) { }
-        EFIListData(const EFIListData &other) : base(other.base), path(other.path) { }
     };
 
-    UINTN max_file_name_size = 256;
+    const static UINTN max_file_name_size = 256;
     EFI_STATUS efi_status;
     UINTN max_info_size = SIZE_OF_EFI_FILE_INFO + max_file_name_size;
     EFI_FILE_INFO *file_info = (EFI_FILE_INFO *)AllocatePool(max_info_size);
 
-    EFIListData *loop_data = new EFIListData(base_handle, dir_name);
+    EFIListData *loop_data = new EFIListData{base_handle, dir_name};
     List<EFIListData> dir_list;
     dir_list.append(*loop_data);
     auto list_pos = dir_list.iterator();
 
     do {
         delete loop_data;
-        loop_data = new EFIListData(list_pos->data->base, list_pos->data->path);
+        loop_data = new EFIListData{list_pos->data->base, list_pos->data->path};
         base_handle = loop_data->base;
         dir_name = loop_data->path;
         EFI_FILE_HANDLE dir_handle;
@@ -75,8 +72,7 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
                     Print(L("%s%s\n"), dir_name, file_info->FileName);
                     if (recursive && is_dir(file_info)) {
                         CHAR16 *name_buffer = cat_alloc_triple(dir_name, file_info->FileName, L("\\"));
-                        EFIListData next_data(dir_handle, name_buffer);
-                        dir_list.append(next_data);
+                        dir_list.append({dir_handle, name_buffer});
                         FreePool(name_buffer);
                     }
                 }
