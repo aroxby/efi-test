@@ -62,13 +62,15 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
     EFI_FILE_INFO *file_info = named_info;
 
     List<EFIListData> dir_list;
-    dir_list.append({base_handle, dir_name});
+    EFIListData loop_data = {base_handle, dir_name};
+    dir_list.append(loop_data);
     auto list_pos = dir_list.iterator();
 
     do {
-        EFIListData *loop_data = new EFIListData{list_pos->data->base, list_pos->data->path};
-        base_handle = loop_data->base;
-        dir_name = loop_data->path;
+        loop_data.base = list_pos->data->base;
+        loop_data.path.assign(list_pos->data->path);
+        base_handle = loop_data.base;
+        dir_name = loop_data.path;
         EFI_FILE_HANDLE dir_handle;
         efi_status = uefi_call(
             base_handle->Open, 5, base_handle, &dir_handle, dir_name, EFI_FILE_MODE_READ, 0);
@@ -92,7 +94,6 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
             } while(efi_status == EFI_SUCCESS && file_info->Size);
         }
     list_pos = list_pos->next;
-    delete loop_data;
     } while(list_pos);
 }
 
