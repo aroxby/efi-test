@@ -12,12 +12,11 @@ public:
     String(const schar *buffer);
     String(const String &other);
     ~String();
-
+    
+    void assign(const schar *buffer);
     operator const schar *() const { return data; }
 
 private:
-    void construct(const schar *buffer);
-
     schar *data;
 };
 
