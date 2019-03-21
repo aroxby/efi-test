@@ -46,14 +46,12 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
     UINTN max_info_size = SIZE_OF_EFI_FILE_INFO + max_file_name_size;
     EFI_FILE_INFO *file_info = (EFI_FILE_INFO *)AllocatePool(max_info_size);
 
-    EFIListData *loop_data = new EFIListData{base_handle, dir_name};
     List<EFIListData> dir_list;
-    dir_list.append(*loop_data);
+    dir_list.append({base_handle, dir_name});
     auto list_pos = dir_list.iterator();
 
     do {
-        delete loop_data;
-        loop_data = new EFIListData{list_pos->data->base, list_pos->data->path};
+        EFIListData *loop_data = new EFIListData{list_pos->data->base, list_pos->data->path};
         base_handle = loop_data->base;
         dir_name = loop_data->path;
         EFI_FILE_HANDLE dir_handle;
@@ -79,8 +77,8 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
             } while(efi_status == EFI_SUCCESS && file_info->Size);
         }
     list_pos = list_pos->next;
-    } while(list_pos);
     delete loop_data;
+    } while(list_pos);
     FreePool(file_info);
 }
 
