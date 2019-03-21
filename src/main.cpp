@@ -3,6 +3,20 @@
 #include "list.h"
 #include "basic-string.h"
 
+template <UINTN max_name_length>
+union NamedFileInfo {
+private:
+    EFI_FILE_INFO info;
+    // FIXME: This size is more than we want.
+    // sizeof(EFI_FILE_INFO) gives the size of structure including FileName and padding.
+    // It would be better to use offsetof(FileName) but it is not a compile time constant
+    CHAR16 name[max_name_length + sizeof(EFI_FILE_INFO)];
+public:
+    operator EFI_FILE_INFO*() {
+        return &info;
+    }
+};
+
 void qemu_exit(UINT8 status) {
     outb(status, 0xf4);
 }
@@ -41,10 +55,11 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
         String path;
     };
 
-    const static UINTN max_file_name_size = 256;
     EFI_STATUS efi_status;
-    UINTN max_info_size = SIZE_OF_EFI_FILE_INFO + max_file_name_size;
-    EFI_FILE_INFO *file_info = (EFI_FILE_INFO *)AllocatePool(max_info_size);
+    const static UINTN max_file_name_size = 256;
+    NamedFileInfo<max_file_name_size> named_info;
+    const static UINTN full_info_size = sizeof(named_info);
+    EFI_FILE_INFO *file_info = named_info;
 
     List<EFIListData> dir_list;
     dir_list.append({base_handle, dir_name});
@@ -62,8 +77,8 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
             list_pos = list_pos->next;
         } else {
             do {
-                ZeroMem(file_info, max_info_size);
-                efi_status = read_dir_entry(dir_handle, file_info, max_info_size);
+                ZeroMem(&named_info, full_info_size);
+                efi_status = read_dir_entry(dir_handle, file_info, full_info_size);
                 if (efi_status != EFI_SUCCESS) {
                     Print(L(" - Couldn't read entry\n"));
                 } else if (file_info->Size && should_list(file_info)) {
@@ -79,7 +94,6 @@ void list_dir(EFI_FILE_HANDLE base_handle, const CHAR16 *dir_name, BOOLEAN recur
     list_pos = list_pos->next;
     delete loop_data;
     } while(list_pos);
-    FreePool(file_info);
 }
 
 extern "C" EFI_STATUS EFIAPI efi_main(EFI_HANDLE imageHandle, EFI_SYSTEM_TABLE *systemTable) {
