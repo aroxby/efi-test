@@ -12,7 +12,7 @@ void *do_allocate(SizeType size) {
 
 void do_free(void *ptr) {
     #if CPP_MEM_AUDIT == 1
-    Print(L("Freepool: %llx\n"), (SizeType)ptr);
+        Print(L("Freepool: %llx\n"), (SizeType)ptr);
     #endif
     return FreePool(ptr);
 }
