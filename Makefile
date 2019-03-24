@@ -6,7 +6,9 @@ CFLAGS=-fno-stack-protector -fpic -fshort-wchar -mno-red-zone -DEFI_FUNCTION_WRA
 CFLAGS:=$(CFLAGS) $(foreach d, $(INCLUDE), -I$d) -Werror=implicit-function-declaration -fno-exceptions -fno-rtti
 LDLIBS=-lgnuefi -lefi
 LDSCRIPT=-T /usr/lib/elf_$(ARCH)_efi.lds
-LDFLAGS=-nostdlib -znocombreloc -shared -Bsymbolic -L/usr/lib -L/usr/local/lib $(EFI_CRT) $(LDLIBS) $(LDSCRIPT) --no-undefined
+LDDIRS=/usr/lib /usr/local/lib
+LDFLAGS=-nostdlib -znocombreloc -shared -Bsymbolic --no-undefined
+LDFLAGS:=$(LDFLAGS) $(foreach d, $(LDDIRS), -L$d) $(EFI_CRT) $(LDLIBS) $(LDSCRIPT)
 OBJCOPYSECTS=.text .sdata .data .dynamic .dynsym .rel .rela .reloc
 OBJCOPYFLAGS=$(foreach s, $(OBJCOPYSECTS), -j $s) --target=efi-app-$(ARCH)
 
